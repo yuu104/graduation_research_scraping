@@ -83,8 +83,9 @@ def get_description(soup: BeautifulSoup) -> Union[str, None]:
     if not description_element:
         return None
     style_tags = description_element.find("style")
+    script_tags = description_element.find("script")
     description_element.find("style").extract() if style_tags else None
-    description_element.find("script").extract() if style_tags else None
+    description_element.find("script").extract() if script_tags else None
     text = description_element.get_text(strip=True).replace("商品の説明", "")
     return text
 
@@ -182,16 +183,9 @@ def main():
 
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
 
-    # url = "https://www.amazon.co.jp/%E4%BC%8A%E8%97%A4%E4%B9%85%E5%8F%B3%E8%A1%9B%E9%96%80-%E5%AE%87%E6%B2%BB%E6%8A%B9%E8%8C%B6-%E8%A9%B0%E3%82%81%E5%90%88%E3%82%8F%E3%81%9B-%E5%90%89%E7%A5%A5%E5%85%AB%E8%A7%92-%E3%82%AB%E3%82%B9%E3%83%86%E3%83%A9%E3%83%BB%E7%BE%8A%E7%BE%B9%E5%85%A5%E3%82%8A/dp/B00JGKNS86/ref=zg_bs_71314051_sccl_1/356-4290058-4769442?th=1"
+    url = "https://www.amazon.co.jp/%E9%BC%93%E6%9C%88-%E9%BC%93%E6%9C%88-%E5%8D%83%E5%AF%BF%E3%81%9B%E3%82%93%E3%81%B9%E3%81%84-16%E6%9E%9A%E5%85%A5-%E8%8A%B1%E6%9F%84%EF%BC%88%E3%83%94%E3%83%B3%E3%82%AF%EF%BC%89/dp/B07WNZY4Q2/ref=sr_1_1_sspa?keywords=%E5%8D%83%E5%AF%BF%E3%81%9B%E3%82%93%E3%81%B9%E3%81%84&qid=1684899985&s=food-beverage&sprefix=%E5%8D%83%E5%AF%BF%2Cfood-beverage%2C273&sr=1-1-spons&psc=1&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUEzVk1QSkxaUlZBNUZVJmVuY3J5cHRlZElkPUEwOTQ0Nzc1MTNYS0tNUzRXUzlLNiZlbmNyeXB0ZWRBZElkPUEzSzNPS0RJVVZWTUVRJndpZGdldE5hbWU9c3BfYXRmJmFjdGlvbj1jbGlja1JlZGlyZWN0JmRvTm90TG9nQ2xpY2s9dHJ1ZQ=="
 
-    # save_item_data(driver=driver, url=url)
-
-    url = "https://www.amazon.co.jp/gp/bestsellers/food-beverage/71314051/ref=zg_bs_pg_1?ie=UTF8&pg=1"
-
-    item_links = get_item_detail_links(driver=driver, url=url)
-
-    for item_link in item_links:
-        save_item_data(driver=driver, url=item_link)
+    save_item_data(driver=driver, url=url)
 
 
 if __name__ == "__main__":
