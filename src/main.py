@@ -8,6 +8,8 @@ from typing import List, Union, TypedDict
 import pandas as pd
 import ulid
 from pprint import pprint
+import re
+import demoji
 
 amazon_domain = "https://www.amazon.co.jp"
 
@@ -17,6 +19,49 @@ class ReviewData(TypedDict):
     title: str
     content: str
     useful_count: int
+
+
+def clean_text(text: str) -> str:
+    # 句読点を改行コードに変換
+    text = re.sub(r"[。、！？．…,.!?]+", lambda match: "\n" * len(match.group()), text)
+
+    # 小文字変換
+    text = text.lower()
+
+    # URL除去
+    text = re.sub(r"http?://[\w/:%#\$&\?\(\)~\.=\+\-]+", "", text)
+    text = re.sub(r"https?://[\w/:%#\$&\?\(\)~\.=\+\-]+", "", text)
+
+    # 改行コードを揃える
+    text = text.replace("\r", "\n")
+
+    # 絵文字除去
+    text = demoji.replace(string=text, repl="")
+
+    # 半角記号除去
+    text = re.sub(
+        r"[!”#$%&\’\\\\()*+,-./:;?@[\\]^_`{|}~「」〔〕“”〈〉『』【】＆＊・（）＄＃＠。,？！｀＋￥％※・]",
+        "",
+        text,
+    )
+
+    # 全角記号除去
+    text = re.sub(
+        "[\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\u3000-\u303F]", "", text
+    )
+
+    return text
+
+
+def remove_strings(text: str) -> str:
+    strings = ["商品の説明", "この商品について", "ブランド紹介", "商品紹介", "原材料・成分"]
+    # 正規表現パターンを生成
+    pattern = r"|".join(map(re.escape, strings))
+
+    # パターンに一致する文字列を空文字に置換して取り除く
+    removed_text = re.sub(pattern, "", text)
+
+    return removed_text
 
 
 def infinite_scroll(driver) -> None:
@@ -79,15 +124,28 @@ def get_item_detail_links(driver, url: str) -> List[str]:
 
 
 def get_description(soup: BeautifulSoup) -> Union[str, None]:
-    description_element = soup.find("div", id="aplus")
-    if not description_element:
-        return None
-    style_tags = description_element.find("style")
-    script_tags = description_element.find("script")
-    description_element.find("style").extract() if style_tags else None
-    description_element.find("script").extract() if script_tags else None
-    text = description_element.get_text(strip=True).replace("商品の説明", "")
-    return text
+    ids = [
+        "featurebullets_feature_div",
+        "productDescription",
+        "aplus",
+        "aplus_feature_div",
+        "visual-rich-product-description",
+    ]
+
+    text = ""
+    for element_id in ids:
+        description_element = soup.find("div", id=element_id)
+        if not description_element:
+            continue
+
+        style_tags = description_element.find("style")
+        script_tags = description_element.find("script")
+        description_element.find("style").extract() if style_tags else None
+        description_element.find("script").extract() if script_tags else None
+        text += remove_strings(description_element.get_text(strip=True))
+
+    text = clean_text(text=text)
+    return text if not text == "" else None
 
 
 def get_reviews(driver, url: str) -> List[ReviewData]:
@@ -114,9 +172,11 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
         review_title = review_element.find("a", class_="review-title").get_text(
             strip=True
         )
-        review_content = review_element.find(
-            "span", class_="a-size-base review-text review-text-content"
-        ).get_text(strip=True)
+        review_content = clean_text(
+            review_element.find(
+                "span", class_="a-size-base review-text review-text-content"
+            ).get_text(strip=True)
+        )
         useful_count_element = review_element.find(
             "span", class_="a-size-base a-color-tertiary cr-vote-text"
         )
@@ -183,7 +243,7 @@ def main():
 
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
 
-    url = "https://www.amazon.co.jp/%E9%BC%93%E6%9C%88-%E9%BC%93%E6%9C%88-%E5%8D%83%E5%AF%BF%E3%81%9B%E3%82%93%E3%81%B9%E3%81%84-16%E6%9E%9A%E5%85%A5-%E8%8A%B1%E6%9F%84%EF%BC%88%E3%83%94%E3%83%B3%E3%82%AF%EF%BC%89/dp/B07WNZY4Q2/ref=sr_1_1_sspa?keywords=%E5%8D%83%E5%AF%BF%E3%81%9B%E3%82%93%E3%81%B9%E3%81%84&qid=1684899985&s=food-beverage&sprefix=%E5%8D%83%E5%AF%BF%2Cfood-beverage%2C273&sr=1-1-spons&psc=1&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUEzVk1QSkxaUlZBNUZVJmVuY3J5cHRlZElkPUEwOTQ0Nzc1MTNYS0tNUzRXUzlLNiZlbmNyeXB0ZWRBZElkPUEzSzNPS0RJVVZWTUVRJndpZGdldE5hbWU9c3BfYXRmJmFjdGlvbj1jbGlja1JlZGlyZWN0JmRvTm90TG9nQ2xpY2s9dHJ1ZQ=="
+    url = "https://www.amazon.co.jp/%E7%BE%8E%E5%AE%B9%E4%B9%B3%E6%B6%B2%E3%80%91-organic-%E3%83%A2%E3%82%A4%E3%82%B9%E3%83%81%E3%83%A5%E3%82%A2-%E3%83%90%E3%83%A9%E3%83%B3%E3%82%B7%E3%83%B3%E3%82%B0-%E3%83%AD%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%BB%E3%83%A9%E3%83%A0%E3%82%BB%E3%83%83%E3%83%88/dp/B08S3J6833/ref=sr_1_11_sspa?keywords=%E3%82%B3%E3%82%B9%E3%83%A1&qid=1685162634&rdc=1&sr=8-11-spons&psc=1&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUFBNEYzNjM3Nk8wNUomZW5jcnlwdGVkSWQ9QTAzNjU5NzMzSkoyUkc2SU1NUzMwJmVuY3J5cHRlZEFkSWQ9QTExQUlSSVBMSFFKWFYmd2lkZ2V0TmFtZT1zcF9tdGYmYWN0aW9uPWNsaWNrUmVkaXJlY3QmZG9Ob3RMb2dDbGljaz10cnVl"
 
     save_item_data(driver=driver, url=url)
 
