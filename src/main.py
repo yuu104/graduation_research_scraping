@@ -169,14 +169,24 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
                 if "a-star-" in element
             ][0]
         )
-        review_title = review_element.find("a", class_="review-title").get_text(
-            strip=True
+        review_title = (
+            review_element.find("a", class_="review-title").get_text(strip=True)
+            if review_element.find("a", class_="review-title")
+            else None
         )
-        review_content = clean_text(
-            review_element.find(
+        review_content = (
+            clean_text(
+                review_element.find(
+                    "span", class_="a-size-base review-text review-text-content"
+                ).get_text(strip=True)
+            )
+            if review_element.find(
                 "span", class_="a-size-base review-text review-text-content"
-            ).get_text(strip=True)
+            )
+            else None
         )
+        if review_title == None or review_content == None:
+            continue
         useful_count_element = review_element.find(
             "span", class_="a-size-base a-color-tertiary cr-vote-text"
         )
@@ -243,7 +253,7 @@ def main():
 
     driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
 
-    url = "https://www.amazon.co.jp/%E7%BE%8E%E5%AE%B9%E4%B9%B3%E6%B6%B2%E3%80%91-organic-%E3%83%A2%E3%82%A4%E3%82%B9%E3%83%81%E3%83%A5%E3%82%A2-%E3%83%90%E3%83%A9%E3%83%B3%E3%82%B7%E3%83%B3%E3%82%B0-%E3%83%AD%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%BB%E3%83%A9%E3%83%A0%E3%82%BB%E3%83%83%E3%83%88/dp/B08S3J6833/ref=sr_1_11_sspa?keywords=%E3%82%B3%E3%82%B9%E3%83%A1&qid=1685162634&rdc=1&sr=8-11-spons&psc=1&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUFBNEYzNjM3Nk8wNUomZW5jcnlwdGVkSWQ9QTAzNjU5NzMzSkoyUkc2SU1NUzMwJmVuY3J5cHRlZEFkSWQ9QTExQUlSSVBMSFFKWFYmd2lkZ2V0TmFtZT1zcF9tdGYmYWN0aW9uPWNsaWNrUmVkaXJlY3QmZG9Ob3RMb2dDbGljaz10cnVl"
+    url = "https://www.amazon.co.jp/BULK-HOMME-FACE-WASH-100g/dp/B00O2P9ALO/ref=zg_bsms_beauty_sccl_1/358-4123197-2338948?psc=1"
 
     save_item_data(driver=driver, url=url)
 
