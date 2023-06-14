@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "scraping", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9.5"
 beautifulsoup4 = "^4.12.2"
 selenium = "^4.9.1"
 chromedriver-binary = "^114.0.5735.16.0"
