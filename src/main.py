@@ -185,7 +185,7 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
             )
             else None
         )
-        if review_title == None or review_content == None:
+        if not review_title or not review_content:
             continue
         useful_count_element = review_element.find(
             "span", class_="a-size-base a-color-tertiary cr-vote-text"
