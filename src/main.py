@@ -53,7 +53,7 @@ def clean_text(text: str) -> str:
     return text
 
 
-def remove_strings(text: str) -> str:
+def remove_stopword(text: str) -> str:
     strings = ["商品の説明", "この商品について", "ブランド紹介", "商品紹介", "原材料・成分"]
     # 正規表現パターンを生成
     pattern = r"|".join(map(re.escape, strings))
@@ -142,7 +142,7 @@ def get_description(soup: BeautifulSoup) -> Union[str, None]:
         script_tags = description_element.find("script")
         description_element.find("style").extract() if style_tags else None
         description_element.find("script").extract() if script_tags else None
-        text += remove_strings(description_element.get_text(strip=True))
+        text += remove_stopword(description_element.get_text(strip=True))
 
     text = clean_text(text=text)
     return text if not text == "" else None
