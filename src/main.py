@@ -1,6 +1,9 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 from time import sleep
 import os
@@ -10,6 +13,7 @@ import ulid
 from pprint import pprint
 import re
 import demoji
+import time
 
 amazon_domain = "https://www.amazon.co.jp"
 
@@ -151,7 +155,6 @@ def get_description(soup: BeautifulSoup) -> Union[str, None]:
 def get_reviews(driver, url: str) -> List[ReviewData]:
     driver.get(url)
 
-    # 無限スクロール
     infinite_scroll(driver=driver)
 
     html = driver.page_source.encode("utf-8")
@@ -216,11 +219,10 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
 def save_item_data(driver, url: str) -> None:
     driver.get(url)
 
-    # 無限スクロール
     infinite_scroll(driver=driver)
 
     html = driver.page_source.encode("utf-8")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
 
     item_description = get_description(soup=soup)
     if not item_description:
@@ -250,12 +252,23 @@ def save_item_data(driver, url: str) -> None:
 def main():
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
+    options.add_argument("--user-agent=hogehoge")
 
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
+    driver = webdriver.Chrome(
+        service=ChromeService(ChromeDriverManager().install()), options=options
+    )
 
-    url = "https://www.amazon.co.jp/BULK-HOMME-FACE-WASH-100g/dp/B00O2P9ALO/ref=zg_bsms_beauty_sccl_1/358-4123197-2338948?psc=1"
+    url = "https://www.amazon.co.jp/%E3%82%A4%E3%83%8B%E3%82%B9%E3%83%95%E3%83%AA%E3%83%BC-innisfree-%E3%83%8E%E3%83%BC%E3%82%BB%E3%83%90%E3%83%A0-%E3%83%9F%E3%83%8D%E3%83%A9%E3%83%AB%E3%83%91%E3%82%A6%E3%83%80%E3%83%BC-N/dp/B097GR6ZQ7/ref=cm_cr_arp_d_product_top?ie=UTF8"
 
-    save_item_data(driver=driver, url=url)
+    start_time = time.time()
+
+    save_item_data(
+        driver=driver,
+        url=url,
+    )
+
+    end_time = time.time()
+    print(f"経過時間：{end_time - start_time}")
 
 
 if __name__ == "__main__":
