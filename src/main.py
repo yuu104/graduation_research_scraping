@@ -2,7 +2,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
-from time import sleep
 import os
 from typing import List, Union, TypedDict
 import pandas as pd
@@ -11,6 +10,7 @@ from pprint import pprint
 import re
 import demoji
 import time
+from infinite_scroll import infinite_scroll
 
 amazon_domain = "https://www.amazon.co.jp"
 
@@ -65,39 +65,6 @@ def remove_stopword(text: str) -> str:
     return removed_text
 
 
-def infinite_scroll(driver) -> None:
-    # 現在のウィンドウの高さを取得
-    win_height = driver.execute_script("return window.innerHeight")
-
-    # スクロール開始位置の初期化
-    lastTop = 1
-
-    # 無限スクロールページの最下部までループ
-    while True:
-        # スクロール前のページの高さを取得
-        last_height = driver.execute_script("return document.body.scrollHeight")
-
-        # スクロールの開始位置を設定
-        top = lastTop
-
-        # 最下部まで徐々にスクロールする
-        while top < last_height:
-            top += int(win_height * 0.8)
-            driver.execute_script("window.scrollTo(0, %d)" % top)
-            sleep(0.5)
-
-        # スクロール後のページの高さを取得
-        sleep(1)
-        newLastHeight = driver.execute_script("return document.body.scrollHeight")
-
-        # スクロール前後で高さに変化がなくなったら終了
-        if last_height == newLastHeight:
-            break
-
-        # ループが終了しなければ現在の高さを再設定して次のループ
-        lastTop = last_height
-
-
 def get_item_detail_links(driver, url: str) -> List[str]:
     driver.get(url)
 
@@ -105,7 +72,7 @@ def get_item_detail_links(driver, url: str) -> List[str]:
     infinite_scroll(driver=driver)
 
     html = driver.page_source.encode("utf-8")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
 
     item_elements = soup.find_all("div", class_="p13n-sc-uncoverable-faceout")
     item_links = []
@@ -155,7 +122,7 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
     infinite_scroll(driver=driver)
 
     html = driver.page_source.encode("utf-8")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = BeautifulSoup(html, "lxml")
 
     review_datas: List[ReviewData] = []
 

@@ -15,6 +15,7 @@ webdriver-manager = "^3.8.6"
 pandas = "^2.0.1"
 ulid-py = "^1.1.0"
 demoji = "^1.1.0"
+lxml = "^4.9.2"
 
 
 [build-system]
