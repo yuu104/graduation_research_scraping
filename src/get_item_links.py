@@ -10,6 +10,7 @@ from infinite_scroll import infinite_scroll
 
 
 class ItemLink(TypedDict):
+    name: str
     link: str
 
 
@@ -24,15 +25,15 @@ def get_item_links(driver, url: str) -> Tuple[List[ItemLink], str]:
     html = driver.page_source.encode("utf-8")
     soup = BeautifulSoup(html, "lxml")
 
-    item_elements = soup.find_all(
-        "div", class_="rush-component s-featured-result-item s-expand-height"
+    item_name_elements = soup.find_all(
+        "h2",
+        class_="a-size-mini a-spacing-none a-color-base s-line-clamp-4",
     )
     item_links: List[ItemLink] = []
-    for item_element in item_elements:
-        item_link = amazon_domain + item_element.find(
-            "a", class_="a-link-normal s-no-outline"
-        ).get("href")
-        item_links.append({"link": item_link})
+    for item_name_element in item_name_elements:
+        item_name = item_name_element.get_text(strip=True)
+        item_link = amazon_domain + item_name_element.find("a").get("href")
+        item_links.append({"name": item_name, "link": item_link})
 
     next_page_link_element = soup.find(
         "a",
@@ -62,7 +63,8 @@ def main():
     url = "https://www.amazon.co.jp/s?i=beauty&rh=n%3A170121011&fs=true&qid=1687415177&ref=sr_pg_2"
 
     item_links: List[ItemLink] = []
-    while len(item_links) < 500:
+    while len(item_links) < 600:
+        print(len(item_links))
         result_item_links, result_next_page_link = get_item_links(
             driver=driver, url=url
         )
@@ -70,6 +72,7 @@ def main():
         item_links.extend(result_item_links)
 
     df = pd.DataFrame(item_links)
+    df = df.drop_duplicates(subset="name")
     df.to_csv(f"{current_path}/csv/item_link/{category_name}.csv")
 
 
