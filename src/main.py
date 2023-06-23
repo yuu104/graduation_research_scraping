@@ -1,6 +1,9 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import os
 from typing import List, Union, TypedDict
@@ -9,10 +12,12 @@ import ulid
 from pprint import pprint
 import re
 import demoji
+from concurrent.futures import ThreadPoolExecutor
 import time
 from infinite_scroll import infinite_scroll
 
 amazon_domain = "https://www.amazon.co.jp"
+current_path = os.path.dirname(os.path.abspath(__file__))
 
 
 class ReviewData(TypedDict):
@@ -119,7 +124,10 @@ def get_description(soup: BeautifulSoup) -> Union[str, None]:
 def get_reviews(driver, url: str) -> List[ReviewData]:
     driver.get(url)
 
-    infinite_scroll(driver=driver)
+    # infinite_scroll(driver=driver)
+    # WebDriverWait(driver=driver, timeout=30).until(
+    #     EC.presence_of_element_located((By.CLASS_NAME, "a-last"))
+    # )
 
     html = driver.page_source.encode("utf-8")
     soup = BeautifulSoup(html, "lxml")
@@ -136,11 +144,15 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
                 if "a-star-" in element
             ][0]
         )
-        review_title = (
-            review_element.find("a", class_="review-title").get_text(strip=True)
-            if review_element.find("a", class_="review-title")
-            else None
-        )
+        review_title_element = review_element.find("a", class_="review-title")
+        if review_title_element:
+            review_title_element.find("span", class_="a-icon-alt")
+            review_element.find("span", class_="a-icon-alt").extract()
+            review_title = review_element.find("a", class_="review-title").get_text(
+                strip=True
+            )
+        else:
+            review_title = None
         review_content = (
             clean_text(
                 review_element.find(
@@ -171,9 +183,9 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
         }
         review_datas.append(review_data)
 
-    next_page_link_element = soup.find("li", class_="a-last").find("a")
-    if next_page_link_element:
-        next_page_link = amazon_domain + next_page_link_element.get("href")
+    next_page_link_element = soup.find("li", class_="a-last")
+    if next_page_link_element and next_page_link_element.find("a"):
+        next_page_link = amazon_domain + next_page_link_element.find("a").get("href")
         data = get_reviews(driver=driver, url=next_page_link)
         review_datas.extend(data)
 
@@ -181,6 +193,7 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
 
 
 def save_item_data(driver, url: str) -> None:
+    print(url)
     driver.get(url)
 
     infinite_scroll(driver=driver)
@@ -192,9 +205,10 @@ def save_item_data(driver, url: str) -> None:
     if not item_description:
         return
 
-    review_page_link = amazon_domain + soup.find(
-        "div", id="reviews-medley-footer"
-    ).find("a").get("href")
+    review_page_link_element = soup.find("div", id="reviews-medley-footer")
+    if not review_page_link_element:
+        return
+    review_page_link = amazon_domain + review_page_link_element.find("a").get("href")
     review_datas = get_reviews(driver=driver, url=review_page_link)
 
     item_description_df = pd.DataFrame(
@@ -204,7 +218,6 @@ def save_item_data(driver, url: str) -> None:
         data=review_datas, columns=["rating", "title", "content", "useful_count"]
     )
 
-    current_path = os.path.dirname(os.path.abspath(__file__))
     item_id = ulid.new()
     os.makedirs(f"{current_path}/csv/{item_id.str}")
     item_description_df.to_csv(
@@ -222,15 +235,20 @@ def main():
         service=ChromeService(ChromeDriverManager().install()), options=options
     )
 
-    url = "https://www.amazon.co.jp/%E3%82%A4%E3%83%8B%E3%82%B9%E3%83%95%E3%83%AA%E3%83%BC-innisfree-%E3%83%8E%E3%83%BC%E3%82%BB%E3%83%90%E3%83%A0-%E3%83%9F%E3%83%8D%E3%83%A9%E3%83%AB%E3%83%91%E3%82%A6%E3%83%80%E3%83%BC-N/dp/B097GR6ZQ7/ref=cm_cr_arp_d_product_top?ie=UTF8"
+    category_name = "emulsion_cleam"
+    item_link_df = pd.read_csv(
+        f"{current_path}/csv/item_link/{category_name}.csv", sep=",", index_col=0
+    )
+    item_links = item_link_df["link"].values[:101]
 
     start_time = time.time()
-
-    save_item_data(
-        driver=driver,
-        url=url,
-    )
-
+    with ThreadPoolExecutor() as executor:
+        executor.map(save_item_data, item_links)
+        for link in item_links:
+            save_item_data(
+                driver=driver,
+                url=link,
+            )
     end_time = time.time()
     print(f"経過時間：{end_time - start_time}")
 
