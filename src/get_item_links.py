@@ -6,6 +6,7 @@ import os
 from typing import List, Tuple, TypedDict
 import pandas as pd
 from pprint import pprint
+import random
 from infinite_scroll import infinite_scroll
 
 
@@ -54,7 +55,14 @@ def main():
 
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    options.add_argument("--user-agent=hogehoge")
+
+    user_agent = [
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.2 Safari/605.1.15",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Safari/605.1.15",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+    ]
+    UA = user_agent[random.randrange(0, len(user_agent), 1)]
+    options.add_argument("--user-agent=" + UA)
 
     driver = webdriver.Chrome(
         service=ChromeService(ChromeDriverManager().install()), options=options
@@ -73,6 +81,7 @@ def main():
 
     df = pd.DataFrame(item_links)
     df = df.drop_duplicates(subset="name")
+    df = df.reset_index(drop=True)
     df.to_csv(f"{current_path}/csv/item_link/{category_name}.csv")
 
 
