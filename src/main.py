@@ -14,6 +14,7 @@ import re
 import demoji
 from concurrent.futures import ThreadPoolExecutor
 import time
+import random
 from infinite_scroll import infinite_scroll
 
 amazon_domain = "https://www.amazon.co.jp"
@@ -170,7 +171,11 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
             "span", class_="a-size-base a-color-tertiary cr-vote-text"
         )
         useful_count = (
-            int(useful_count_element.get_text().replace("人のお客様がこれが役に立ったと考えています", ""))
+            int(
+                useful_count_element.get_text()
+                .replace("人のお客様がこれが役に立ったと考えています", "")
+                .replace(",", "")
+            )
             if useful_count_element
             else 0
         )
@@ -194,7 +199,7 @@ def get_reviews(driver, url: str) -> List[ReviewData]:
 
 def save_item_data(driver, url: str) -> None:
     print(url)
-    driver.get(url)
+    driver.get(url.replace(" ", ""))
 
     infinite_scroll(driver=driver)
 
@@ -208,7 +213,10 @@ def save_item_data(driver, url: str) -> None:
     review_page_link_element = soup.find("div", id="reviews-medley-footer")
     if not review_page_link_element:
         return
-    review_page_link = amazon_domain + review_page_link_element.find("a").get("href")
+    review_page_link_a_tag = review_page_link_element.find("a")
+    if not review_page_link_a_tag:
+        return
+    review_page_link = amazon_domain + review_page_link_a_tag.get("href")
     review_datas = get_reviews(driver=driver, url=review_page_link)
 
     item_description_df = pd.DataFrame(
@@ -229,7 +237,14 @@ def save_item_data(driver, url: str) -> None:
 def main():
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
-    options.add_argument("--user-agent=hogehoge")
+
+    user_agent = [
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.2 Safari/605.1.15",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1 Safari/605.1.15",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+    ]
+    UA = user_agent[random.randrange(0, len(user_agent), 1)]
+    options.add_argument("--user-agent=" + UA)
 
     driver = webdriver.Chrome(
         service=ChromeService(ChromeDriverManager().install()), options=options
