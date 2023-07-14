@@ -29,8 +29,8 @@ class ReviewData(TypedDict):
 
 
 def clean_text(text: str) -> str:
-    # 句読点を改行コードに変換
-    text = re.sub(r"[。、！？．…,.!?]+", lambda match: "\n" * len(match.group()), text)
+    # 句点を改行コードに変換
+    text = re.sub(r"[。！？．….!?]+", lambda match: "\n" * len(match.group()), text)
 
     # 小文字変換
     text = text.lower()
