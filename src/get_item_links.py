@@ -71,8 +71,7 @@ def main():
     url = "https://www.amazon.co.jp/s?i=beauty&rh=n%3A170121011&fs=true&qid=1687415177&ref=sr_pg_2"
 
     item_links: List[ItemLink] = []
-    while len(item_links) < 600:
-        print(len(item_links))
+    while len(item_links) < 1000:
         result_item_links, result_next_page_link = get_item_links(
             driver=driver, url=url
         )
