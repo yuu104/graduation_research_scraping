@@ -64,9 +64,21 @@ def clean_text(text: str) -> str:
 
 
 def remove_stopword(text: str) -> str:
-    strings = ["商品の説明", "この商品について", "ブランド紹介", "商品紹介", "原材料・成分"]
+    stopwords = [
+        "商品の説明",
+        "この商品について",
+        "ブランド紹介",
+        "商品紹介",
+        "原材料・成分",
+        "previous pag",
+        "ストアにアクセス",
+        "商品ラインナップ",
+        "ストアにアクセス",
+        "next page",
+    ]
+
     # 正規表現パターンを生成
-    pattern = r"|".join(map(re.escape, strings))
+    pattern = r"|".join(map(re.escape, stopwords))
 
     # パターンに一致する文字列を空文字に置換して取り除く
     removed_text = re.sub(pattern, "", text)
