@@ -106,20 +106,21 @@ def get_description(soup: BeautifulSoup) -> Union[str, None]:
         "visual-rich-product-description",
     ]
 
-    text = ""
+    sentence_list: List[str] = []
     for element_id in ids:
         description_element = soup.find("div", id=element_id)
         if not description_element:
             continue
-
         style_tags = description_element.find("style")
         script_tags = description_element.find("script")
         description_element.find("style").extract() if style_tags else None
         description_element.find("script").extract() if script_tags else None
-        text += remove_stopword(description_element.get_text(strip=True))
-
-    text = clean_text(text=text)
-    return text if not text == "" else None
+        text = list(description_element.stripped_strings)
+        text = list(map(remove_stopword, text))
+        text = list(map(clean_text, text))
+        text = list(filter(lambda sentence: len(sentence) != 0, text))
+        sentence_list.extend(text)
+    return "\n".join(sentence_list) if len(sentence_list) else None
 
 
 def get_reviews(driver, url: str) -> List[ReviewData]:
