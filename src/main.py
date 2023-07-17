@@ -60,6 +60,9 @@ def clean_text(text: str) -> str:
         "[\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\u3000-\u303F]", "", text
     )
 
+    # 空白除去
+    text = text.replace(" ", "").replace("　", "")
+
     return text
 
 
