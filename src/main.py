@@ -120,6 +120,8 @@ def get_description(soup: BeautifulSoup) -> Union[str, None]:
         text = list(map(clean_text, text))
         text = list(filter(lambda sentence: len(sentence) != 0, text))
         sentence_list.extend(text)
+    sentence_list = list(map(lambda sentence: sentence.rstrip("\n"), sentence_list))
+
     return "\n".join(sentence_list) if len(sentence_list) else None
 
 
