@@ -135,7 +135,15 @@ def get_description(soup: BeautifulSoup) -> Union[str, None]:
         text = list(map(clean_text, text))
         text = list(filter(lambda sentence: len(sentence) != 0, text))
         sentence_list.extend(text)
-    sentence_list = list(map(lambda sentence: sentence.rstrip("\n"), sentence_list))
+    description_text = "\n".join(sentence_list)
+    sentence_list = description_text.split("\n")
+    sentence_list = list(filter(lambda sentence: len(sentence) > 1, sentence_list))
+    alnum_pattern = re.compile(r"^[a-zA-Z0-9]+$")
+    sentence_list = list(
+        filter(
+            lambda sentence: bool(alnum_pattern.match(sentence)) == False, sentence_list
+        )
+    )
 
     return "\n".join(sentence_list) if len(sentence_list) else None
 
