@@ -45,6 +45,9 @@ def clean_text(text: str) -> str:
     # 絵文字除去
     text = demoji.replace(string=text, repl="")
 
+    # 【】を除去
+    text = text.replace("【", "").replace("】", "\n")
+
     # 半角記号除去
     text = re.sub(
         r"[!”#$%&\’\\\\()*+,-./:;?@[\\]^_`{|}~「」〔〕“”〈〉『』【】＆＊・（）＄＃＠。,？！｀＋￥％※・]",
