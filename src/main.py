@@ -58,6 +58,9 @@ def clean_text(text: str) -> str:
     # ①〜⑩の数字付きの記号を除去
     text = re.sub(r"\s*①|\s*②|\s*③|\s*④|\s*⑤|\s*⑥|\s*⑦|\s*⑧|\s*⑨|\s*⑩", "", text)
 
+    # ¹~⁹の記号を除去
+    text = re.sub("[¹²³⁴⁵⁶⁷⁸⁹]", "", text)
+
     # 全角記号除去
     text = re.sub(
         "[\uFF01-\uFF0F\uFF1A-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\u3000-\u303F]", "", text
