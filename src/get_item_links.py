@@ -3,7 +3,7 @@ from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import os
-from typing import List, Tuple, TypedDict
+from typing import List, Tuple, TypedDict, Union
 import pandas as pd
 from pprint import pprint
 import random
@@ -18,7 +18,7 @@ class ItemLink(TypedDict):
 amazon_domain = "https://www.amazon.co.jp"
 
 
-def get_item_links(driver, url: str) -> Tuple[List[ItemLink], str]:
+def get_item_links(driver, url: str) -> Tuple[List[ItemLink], Union[str, None]]:
     driver.get(url=url)
 
     infinite_scroll(driver=driver)
@@ -40,7 +40,12 @@ def get_item_links(driver, url: str) -> Tuple[List[ItemLink], str]:
         "a",
         class_="s-pagination-item s-pagination-next s-pagination-button s-pagination-separator",
     )
-    next_page_link = amazon_domain + next_page_link_element.get("href")
+
+    next_page_link = (
+        amazon_domain + next_page_link_element.get("href")
+        if next_page_link_element
+        else None
+    )
     # if next_page_link_element:
     #     next_page_link = amazon_domain + next_page_link_element.get("href")
     #     links = get_item_links(driver=driver, url=next_page_link)
@@ -71,7 +76,7 @@ def main():
     url = "https://www.amazon.co.jp/s?i=beauty&rh=n%3A170121011&fs=true&qid=1687415177&ref=sr_pg_2"
 
     item_links: List[ItemLink] = []
-    while len(item_links) < 1000:
+    while len(item_links) < 1000 and url:
         result_item_links, result_next_page_link = get_item_links(
             driver=driver, url=url
         )
